@@ -14,7 +14,7 @@ import Material
 import BRDF
 import System.Random (RandomGen(..))
 import Control.Parallel.Strategies
-import Control.Applicative
+
 
 -- | gamma used for intensity mapping
 gamma, invGamma :: Float

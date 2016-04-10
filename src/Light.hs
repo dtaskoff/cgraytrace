@@ -6,7 +6,7 @@ import Math
 import Linear
 import Linear.Affine
 import System.Random (RandomGen(..))
-import Control.Applicative
+
 
 -- |Light description
 type Color a        = V3 a
