@@ -4,76 +4,79 @@ import Math
 import Linear
 import Linear.Affine
 
+
 newtype UnitSpace = US (V2 Float)
 
-newtype Sensor = Sensor (Int, Int, V2 Float, Float)    -- width, height, physical size, exposure
+newtype Sensor = Sensor (Int, Int, V2 Float, Float)
+-- ^width, height, physical size, exposure
 
 -- |Interface for all cameras with two needed functions
 class Camera cam where
-    cameraRay    :: cam -> UnitSpace -> RaySegment
-    cameraSensor :: cam -> Sensor
+  cameraRay    :: cam -> UnitSpace -> RaySegment
+  cameraSensor :: cam -> Sensor
 
 -- |Our cameras
-data PinholeCamera = PinholeCamera {
-            phcamSensor      :: Sensor,
-            phcamPos         :: Coord3,
-            phcamDir         :: UnitVec3,
-            phcamUp          :: UnitVec3,
-            phcamFocalLength :: Float }
+data PinholeCamera = PinholeCamera
+  { phcamSensor      :: Sensor
+  , phcamPos         :: Coord3
+  , phcamDir         :: UnitVec3
+  , phcamUp          :: UnitVec3
+  , phcamFocalLength :: Float
+  }
 
-data OrthoCamera = OrthoCamera {
-            orthoSensor      :: Sensor,
-            orthoPos         :: Coord3,
-            orthoDir         :: UnitVec3,
-            orthoUp          :: UnitVec3 }
+data OrthoCamera = OrthoCamera
+  { orthoSensor :: Sensor
+  , orthoPos    :: Coord3
+  , orthoDir    :: UnitVec3
+  , orthoUp     :: UnitVec3
+  }
 
 -- |Implementation of Ortho camera
 instance Camera OrthoCamera where
-      cameraRay cam (US imagePos) = RaySeg (Ray (start, orthoDir cam), farthestDistance) where
-          Sensor (_,_,sensorSize,_)  = orthoSensor cam
-          aspect        = sensorAspect.orthoSensor $ cam
+  cameraRay (OrthoCamera sensor pos dir up) (US imagePos) =
+      RaySeg (Ray (start, dir), farthestDistance)
+    where Sensor (_,_,sensorSize,_)  = sensor
+          start         = pos .+^ (vpos3 *! view)
+          vpos3         = V3 (x*aspect) y 0.0
+          view          = V3 xaxis yaxis zaxis
 
           (V2 x y)      = (imagePos - V2 0.5 0.5) * sensorSize
-          vpos3         = V3 (x*aspect) y 0.0
-          start         = orthoPos cam .+^ (vpos3 *! view)
+          aspect        = sensorAspect sensor
 
-          xaxis         = normalize( cross (normalized.orthoUp $ cam) zaxis )
+          xaxis         = normalize $ cross (normalized up) zaxis
           yaxis         = cross zaxis xaxis
-          zaxis         = normalized( orthoDir cam )
+          zaxis         = normalized dir
 
-          view          = V3 xaxis yaxis zaxis                  :: M33 Float
-
-      cameraSensor = orthoSensor
+  cameraSensor = orthoSensor
 
 -- |Implementation of Pinhole camera
 instance Camera PinholeCamera where
-    cameraRay cam (US imagePos) = RaySeg (Ray (phcamPos cam, normalize3 proj), farthestDistance) where
-        Sensor (_,_,sensorSize,_) = phcamSensor cam
-        aspect   = sensorAspect.phcamSensor $ cam
+  cameraRay (PinholeCamera sensor pos dir up focalLength) (US imagePos) =
+      RaySeg (Ray (pos, normalize3 proj), farthestDistance)
+    where Sensor (_,_,sensorSize,_) = sensor
+          proj     = v *! view
+          v        = d ^* focalLength - vpos3
+          view     = V3 xaxis yaxis zaxis
 
-        (V2 x y) = (imagePos - V2 0.5 0.5) * sensorSize
-        vpos3    = V3 (x*aspect) (-y) 0.0
+          d        = normalized dir
+          vpos3    = V3 (x*aspect) (-y) 0.0
+          (V2 x y) = (imagePos - V2 0.5 0.5) * sensorSize
+          aspect   = sensorAspect sensor
 
-        d        = normalized( phcamDir cam )
-        v        = d ^* phcamFocalLength cam - vpos3
-        proj     = v *! view
+          xaxis    = normalize $ cross (normalized up) zaxis
+          yaxis    = cross zaxis xaxis
+          zaxis    = normalized dir
 
-        xaxis    = normalize( cross( normalized.phcamUp $ cam ) zaxis )
-        yaxis    = cross zaxis xaxis
-        zaxis    = normalized( phcamDir cam )
-
-        view     = V3 xaxis yaxis zaxis
-
-    cameraSensor = phcamSensor
+  cameraSensor = phcamSensor
 
 
------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------
 sensorAspect :: Sensor -> Float
 sensorAspect (Sensor (w,h,V2 sw sy,_)) =
-    fromIntegral w / fromIntegral h / sizeAspect where
-        sizeAspect = sw/sy
+    fromIntegral w / fromIntegral h / sizeAspect
+  where sizeAspect = sw / sy
 
 toScreenSpace :: Sensor -> Int -> Int -> UnitSpace
-toScreenSpace (Sensor (width, height, _, _)) x y = US $ V2 sx sy where
-        sx = fromIntegral x / (fromIntegral width  - 1)
+toScreenSpace (Sensor (width, height, _, _)) x y = US $ V2 sx sy
+  where sx = fromIntegral x / (fromIntegral width  - 1)
         sy = fromIntegral y / (fromIntegral height - 1)

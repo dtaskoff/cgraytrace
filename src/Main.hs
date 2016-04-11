@@ -1,4 +1,10 @@
-{-# LANGUAGE NoMonomorphismRestriction, QuasiQuotes, TemplateHaskell, TypeFamilies, OverloadedStrings, ViewPatterns #-}
+{-# LANGUAGE NoMonomorphismRestriction
+           , QuasiQuotes
+           , TemplateHaskell
+           , TypeFamilies
+           , OverloadedStrings
+           , ViewPatterns
+  #-}
 module Main where
 
 import Yesod
@@ -6,6 +12,7 @@ import Codec.Picture.Png
 import Raytracer
 import Scene
 import System.Random.TF.Gen (seedTFGen)
+
 
 -- Little RESTful HTTP web server to show us rendering result
 data App = App
@@ -18,12 +25,13 @@ mkYesod "App" [parseRoutes|
 
 getImageSizeR :: MonadHandler m => Int -> Int -> m TypedContent
 getImageSizeR width height = do
-    let gen = seedTFGen (1,2,3,4)
-    let image = raytrace gen cornellScene (cornellCamera width height)
+  let gen = seedTFGen (1,2,3,4)
+  let image = raytrace gen cornellScene $ cornellCamera width height
 
-    sendResponse $ toTypedContent (typePng, toContent (encodePng image))
+  sendResponse $ toTypedContent (typePng, toContent (encodePng image))
 
--- |HTTP GET at "host/" address that return us ray traced image
+
+-- |HTTP GET at "host/" address that returns us a ray traced image
 getImageR :: MonadHandler m => m TypedContent
 getImageR = getImageSizeR 320 240
 
