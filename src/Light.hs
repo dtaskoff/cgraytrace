@@ -16,7 +16,7 @@ type LightTrans     = Color (Dimensionless Float)              -- R, G, B coeffi
 -- |Light & shadow interface
 class Shadow gen light where
     shadowRay :: RandomGen gen => gen -> light -> Coord3 -> (RaySegment, gen)
-    eval      :: light -> UnitV3 -> LightIntensity                  -- dir2light
+    eval      :: light -> UnitVec3 -> LightIntensity                  -- dir2light
 
 -- |Supported light types
 data Light = OmniLight (Coord3,             LuminousFlux Float) |   -- center, luminous flux [lumens]

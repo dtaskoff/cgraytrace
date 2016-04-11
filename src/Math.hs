@@ -1,6 +1,6 @@
 module Math(    Ray(..), RaySegment (..),
                 Vec3, Coord3, coord,
-                UnitV3, normalize3, normalized, mkTangent,
+                UnitVec3, normalize3, normalized, mkTangent,
                 SphericalVec(..), toSpherical, fromSpherical,
                 clamp, inRange,
                 farthestDistance ) where
@@ -21,17 +21,25 @@ type Coord3 = Point V3 Float                           -- ^World coordinate syst
 coord :: a -> a -> a -> Point V3 a
 coord x y z = P(V3 x y z)
 
-newtype Ray = Ray (Coord3, UnitV3)       deriving Show -- ^position & direction
+newtype Ray = Ray (Coord3, UnitVec3)       deriving Show -- ^position & direction
 newtype RaySegment = RaySeg (Ray, Float) deriving Show -- ^ray segment over Ray and between [0..Float]
 
 -----------------------------------------------------------------------------------------------------
 -- |Track normalized type-safe vectors in world-coordinate system
-newtype UnitV3 = UnitV3 Vec3 deriving (Eq, Show)
+newtype UnitV3 a = UnitV3 a deriving (Eq, Show)
+type UnitVec3 = UnitV3 Vec3
 
-normalize3 :: Vec3 -> UnitV3
-normalize3 = UnitV3 . normalize
+instance Functor UnitV3 where
+  f `fmap` UnitV3 x = UnitV3 $ f x
 
-normalized :: UnitV3 -> Vec3
+instance Applicative UnitV3 where
+  pure = UnitV3
+  UnitV3 f <*> x = f <$> x
+
+normalize3 :: Vec3 -> UnitVec3
+normalize3 = pure . normalize
+
+normalized :: UnitVec3 -> Vec3
 normalized (UnitV3 v) = v
 
 -----------------------------------------------------------------------------------------------------
@@ -43,7 +51,7 @@ inRange :: RandomGen g => g -> Int -> Float
 inRange gen i = fromIntegral (i - min') P./ fromIntegral (max' - min') where
     (min', max') = genRange gen
 
-mkTangent :: UnitV3 -> UnitV3
+mkTangent :: UnitVec3 -> UnitVec3
 mkTangent (UnitV3 (V3 x y z)) = normalize3( result c ) where
     (x', y', z') = (abs x, abs y, abs z)
 

@@ -6,9 +6,9 @@ import Linear.Affine
 -- |Intersection information returned from each successful intersection
 data Intersection g =   Hit {   isectDepth     :: Float,   -- depth to intersection from ray origin
                                 isectPoint     :: Coord3,  -- point of intersection
-                                isectNormal    :: UnitV3,  -- normal at the point of intersection
-                                isectTangent   :: UnitV3,  -- tangent over the surface at the point of intersection
-                                isectBiTangent :: UnitV3,  -- bi-tangent over the surface at the point of intersection
+                                isectNormal    :: UnitVec3,  -- normal at the point of intersection
+                                isectTangent   :: UnitVec3,  -- tangent over the surface at the point of intersection
+                                isectBiTangent :: UnitVec3,  -- bi-tangent over the surface at the point of intersection
                                 isectEntity    :: g }      -- intersected geometry
                                     deriving Show
 
@@ -17,7 +17,7 @@ class Intersectable geom where
 
 -- |All geometric types supported by this raytracer
 data Geometry = Sphere Coord3 Float |
-                Plane  UnitV3 Float
+                Plane  UnitVec3 Float
                     deriving (Eq, Show)
 
 -- |Implementation of Spehere and Plane geometries intersection

@@ -17,15 +17,15 @@ class Camera cam where
 data PinholeCamera = PinholeCamera {
             phcamSensor      :: Sensor,
             phcamPos         :: Coord3,
-            phcamDir         :: UnitV3,
-            phcamUp          :: UnitV3,
+            phcamDir         :: UnitVec3,
+            phcamUp          :: UnitVec3,
             phcamFocalLength :: Float }
 
 data OrthoCamera = OrthoCamera {
             orthoSensor      :: Sensor,
             orthoPos         :: Coord3,
-            orthoDir         :: UnitV3,
-            orthoUp          :: UnitV3 }
+            orthoDir         :: UnitVec3,
+            orthoUp          :: UnitVec3 }
 
 -- |Implementation of Ortho camera
 instance Camera OrthoCamera where

@@ -11,7 +11,7 @@ import System.Random (RandomGen(..))
 
 -- |all BRDFs have this two functions
 class BRDF brdf geom where
-    evalBRDF     :: brdf -> Intersection geom -> UnitV3 -> UnitV3 -> LightTrans -- intersection info, dir to viewer, dir to light
+    evalBRDF     :: brdf -> Intersection geom -> UnitVec3 -> UnitVec3 -> LightTrans -- intersection info, dir to viewer, dir to light
     generateRay  :: RandomGen gen => gen -> brdf -> Intersection geom -> (Ray, gen) -- generate new ray reflected from the surface
 
 
