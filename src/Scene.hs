@@ -2,6 +2,7 @@ module Scene where
 
 import Numeric.Units.Dimensional.Prelude( (*~), lumen )
 import Linear
+import Linear.Affine (Point(P))
 import Geometry
 import Camera
 import Light
@@ -40,6 +41,34 @@ cornellScene = Scene [leftWall, rightWall, bottomWall, backWall, topWall, sphere
         backWall   = Entity (Plane (unitvec 0 0 (-1)) 100)  (mkDiffuse 0.18 0.18 0.18)
         topWall    = Entity (Plane (unitvec 0 (-1)  0) 100) (mkDiffuse 0.18 0.18 0.18)
         sphere0    = Entity (Sphere (coord  0 (-50) 0) 20)  (mkDiffuse 0.50 0.50 0.50)
+
+        light1     = RectLight (coord 0 85 0, V3 40 0 0, V3 0 0 40, 450*~lumen)  -- 40W incacestent bulb
+
+        settings   = Settings { rsLightSamplesCount = 5, rsSecondaryGICount = 25, rsPathMaxDepth = 3 }
+
+triangleNormal :: Coord3 -> Coord3 -> Coord3 -> UnitVec3
+triangleNormal (P a) (P b) (P c) = normalize3 $ n
+  where n = v `cross` w
+        v = b - a
+        w = c - a
+
+cornellScene2 :: Scene
+cornellScene2 = Scene ([leftWall, rightWall, bottomWall, backWall, topWall] ++
+    tetrahedron) light1 zeroLightIntensity settings
+  where leftWall    = Entity (Plane (unitvec 1 0 0)    100)  (mkDiffuse 1.58 0 0)
+        rightWall   = Entity (Plane (unitvec (-1) 0 0) 100)  (mkDiffuse 0.0 0.0 0.28)
+        bottomWall  = Entity (Plane (unitvec 0 1 0)    100)  (mkDiffuse 0.18 0.18 0)
+        backWall    = Entity (Plane (unitvec 0 0 (-1)) 100)  (mkDiffuse 0.18 0.18 0.18)
+        topWall     = Entity (Plane (unitvec 0 (-1)  0) 100) (mkDiffuse 0.18 0.18 0.18)
+        tetrahedron = [ Entity (Triangle a b d $ triangleNormal a b d) (mkDiffuse 0.9 0.9 0.9)
+                      , Entity (Triangle b c d $ triangleNormal b c d) (mkDiffuse 0.9 0.9 0.9)
+                      , Entity (Triangle c a d $ triangleNormal c a d) (mkDiffuse 0.9 0.9 0.9)
+                      , Entity (Triangle a c b $ triangleNormal a c b) (mkDiffuse 0.9 0.9 0.9)
+                      ]
+        a = coord (-40) (-60) 20.0
+        b = coord 40    (-60) 20.0
+        c = coord 0     (-20) (-40.0)
+        d = coord 0     40 0
 
         light1     = RectLight (coord 0 85 0, V3 40 0 0, V3 0 0 40, 450*~lumen)  -- 40W incacestent bulb
 

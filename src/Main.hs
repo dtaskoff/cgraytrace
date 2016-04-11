@@ -19,8 +19,9 @@ data App = App
 instance Yesod App
 
 mkYesod "App" [parseRoutes| 
-/               ImageR      GET
-/res/#Int/#Int  ImageSizeR  GET
+/              ImageR     GET
+/res/#Int/#Int ImageSizeR GET
+/vrscene/#Int  VRSceneR   GET
 |]
 
 getImageSizeR :: MonadHandler m => Int -> Int -> m TypedContent
@@ -34,6 +35,14 @@ getImageSizeR width height = do
 -- |HTTP GET at "host/" address that returns us a ray traced image
 getImageR :: MonadHandler m => m TypedContent
 getImageR = getImageSizeR 320 240
+
+getVRSceneR :: MonadHandler m => Int -> m TypedContent
+getVRSceneR _ = do
+  let gen = seedTFGen (1,2,3,4)
+  let image = raytrace gen cornellScene2 $ cornellCamera 320 240
+
+  sendResponse $ toTypedContent (typePng, toContent (encodePng image))
+
 
 main :: IO ()
 main = warpEnv App
