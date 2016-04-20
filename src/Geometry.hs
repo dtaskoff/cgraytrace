@@ -3,29 +3,28 @@ module Geometry where
 import Math
 import Linear
 import Linear.Affine
-import Control.Applicative (liftA2)
 
 
--- |Intersection information returned from each successful intersection
+-- | Intersection information returned from each successful intersection
 data Intersection g = Hit
-  { isectDepth     :: Float    -- depth from ray origin to intersection
-  , isectPoint     :: Coord3   -- point of intersection
-  , isectNormal    :: UnitVec3 -- normal at the point of intersection
-  , isectTangent   :: UnitVec3 -- tangent over the surface at the point of intersection
-  , isectBiTangent :: UnitVec3 -- bi-tangent over the surface at the point of intersection
-  , isectEntity    :: g        -- intersected geometry
+  { isectDepth     :: Double  -- depth from ray origin to intersection
+  , isectPoint     :: P3d     -- point of intersection
+  , isectNormal    :: UnitV3d -- normal at the point of intersection
+  , isectTangent   :: UnitV3d -- tangent over the surface at the point of intersection
+  , isectBiTangent :: UnitV3d -- bi-tangent over the surface at the point of intersection
+  , isectEntity    :: g       -- intersected geometry
   } deriving Show
 
 class Intersectable geom where
   intersect :: RaySegment -> geom -> Maybe (Intersection geom)
 
--- |All geometric types supported by this raytracer
-data Geometry = Sphere Coord3 Float
-              | Plane UnitVec3 Float
-              | Triangle Coord3 Coord3 Coord3 UnitVec3
+-- | All geometric types supported by this raytracer
+data Geometry = Sphere P3d Double
+              | Plane UnitV3d Double
+              | Triangle P3d P3d P3d UnitV3d
   deriving (Eq, Show)
 
--- |Implementation of intersect for Sphere and Plane geometries
+-- | Implementation of intersect for Sphere, Plane and Triangle geometries
 instance Intersectable Geometry where
   intersect raySegment sphere@(Sphere center radius) =
       if d >= 0 && t <= maxDepth
@@ -43,9 +42,9 @@ instance Intersectable Geometry where
           ndir       = normalized dir
           (P voffs)  = rayOrigin - center
           ipoint     = rayOrigin .+^ (t *^ normalized dir)
-          inormal    = normalize3 $ ipoint .-. center
+          inormal    = vunitV3d $ ipoint .-. center
           itangent   = mkTangent inormal
-          ibitangent = normalize <$> liftA2 cross inormal itangent
+          ibitangent = liftUnitV3 cross inormal itangent
 
   intersect raySegment plane@(Plane normal d) =
       if t >= 0 && t <= maxDepth  
@@ -58,7 +57,7 @@ instance Intersectable Geometry where
           ndir       = normalized dir
           point'     = rayOrigin .+^ (t *^ ndir)
           itangent   = mkTangent normal
-          ibitangent = normalize <$> liftA2 cross normal itangent
+          ibitangent = liftUnitV3 cross normal itangent
 
   intersect raySegment triangle@(Triangle (P a) (P b) (P c) normal) =
       if not parallel && t >= 0 && t <= maxDepth && inTriangle
@@ -73,7 +72,7 @@ instance Intersectable Geometry where
           d          = negate $ dot nnormal a
           point'     = rayOrigin .+^ (t *^ ndir)
           itangent   = mkTangent normal
-          ibitangent = normalize <$> liftA2 cross normal itangent
+          ibitangent = liftUnitV3 cross normal itangent
           inTriangle = dot nnormal v0 >= 0 && dot nnormal v1 >= 0 && dot nnormal v2 >= 0
           (v0,v1,v2) = (cross e0 c0, cross e1 c1, cross e2 c2)
           (e0,e1,e2) = (b - a, c - b, a - c)

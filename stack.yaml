@@ -1,6 +1,7 @@
 flags: {}
 packages:
+- location: https://github.com/leohaskell/parseVRS/archive/master.zip
 - '.'
 extra-deps: []
-resolver: lts-5.11
+resolver: lts-5.12
 

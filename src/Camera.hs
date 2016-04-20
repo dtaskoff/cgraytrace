@@ -5,33 +5,33 @@ import Linear
 import Linear.Affine
 
 
-newtype UnitSpace = US (V2 Float)
+newtype UnitSpace = US (V2 Double)
 
-newtype Sensor = Sensor (Int, Int, V2 Float, Float)
--- ^width, height, physical size, exposure
+newtype Sensor = Sensor (Int, Int, V2 Double, Double)
+-- ^ width, height, physical size, exposure
 
--- |Interface for all cameras with two needed functions
+-- | Interface for all cameras with two needed functions
 class Camera cam where
   cameraRay    :: cam -> UnitSpace -> RaySegment
   cameraSensor :: cam -> Sensor
 
--- |Our cameras
+-- | Our cameras
 data PinholeCamera = PinholeCamera
   { phcamSensor      :: Sensor
-  , phcamPos         :: Coord3
-  , phcamDir         :: UnitVec3
-  , phcamUp          :: UnitVec3
-  , phcamFocalLength :: Float
+  , phcamPos         :: P3d
+  , phcamDir         :: UnitV3d
+  , phcamUp          :: UnitV3d
+  , phcamFocalLength :: Double
   }
 
 data OrthoCamera = OrthoCamera
   { orthoSensor :: Sensor
-  , orthoPos    :: Coord3
-  , orthoDir    :: UnitVec3
-  , orthoUp     :: UnitVec3
+  , orthoPos    :: P3d
+  , orthoDir    :: UnitV3d
+  , orthoUp     :: UnitV3d
   }
 
--- |Implementation of Ortho camera
+-- | Implementation of Ortho camera
 instance Camera OrthoCamera where
   cameraRay (OrthoCamera sensor pos dir up) (US imagePos) =
       RaySeg (Ray (start, dir), farthestDistance)
@@ -52,7 +52,7 @@ instance Camera OrthoCamera where
 -- |Implementation of Pinhole camera
 instance Camera PinholeCamera where
   cameraRay (PinholeCamera sensor pos dir up focalLength) (US imagePos) =
-      RaySeg (Ray (pos, normalize3 proj), farthestDistance)
+      RaySeg (Ray (pos, vunitV3d proj), farthestDistance)
     where Sensor (_,_,sensorSize,_) = sensor
           proj     = v *! view
           v        = d ^* focalLength - vpos3
@@ -71,7 +71,7 @@ instance Camera PinholeCamera where
 
 
 ---------------------------------------------------------------------
-sensorAspect :: Sensor -> Float
+sensorAspect :: Sensor -> Double
 sensorAspect (Sensor (w,h,V2 sw sy,_)) =
     fromIntegral w / fromIntegral h / sizeAspect
   where sizeAspect = sw / sy

@@ -9,34 +9,36 @@ import System.Random (RandomGen(..))
 import Control.Applicative (liftA2)
 
 
--- |Light description
+-- | Light description
 type Color a        = V3 a
-type LightIntensity = Color (LuminousIntensity Float)
--- ^R, G, B components of directional luminous intensity [candela]
-type LightTrans     = Color (Dimensionless Float)
--- ^R, G, B coefficients of light transmitance [1/steradian]
+type LightIntensity = Color (LuminousIntensity Double)
+-- ^ R, G, B components of directional luminous intensity [candela]
+type LightTrans     = Color (Dimensionless Double)
+-- ^ R, G, B coefficients of light transmitance [1/steradian]
 
--- |Light & shadow interface
+-- | Light & shadow interface
 class Shadow gen light where
-  shadowRay :: RandomGen gen => gen -> light -> Coord3 -> (RaySegment, gen)
-  eval      :: light -> UnitVec3 -> LightIntensity -- dir2light
+  shadowRay :: RandomGen gen => gen -> light -> P3d -> (RaySegment, gen)
+  eval      :: light -> UnitV3d -> LightIntensity -- dir2light
 
--- |Supported light types
-data Light = OmniLight (Coord3,             LuminousFlux Float) -- center, luminous flux [lumens]
-           | RectLight (Coord3, Vec3, Vec3, LuminousFlux Float) -- center, side0, side1, luminous flux [lumens]
+-- | Supported light types
+data Light = OmniLight (P3d,           LuminousFlux Double)
+            -- ^ center, luminous flux [lumens]
+           | RectLight (P3d, V3d, V3d, LuminousFlux Double)
+            -- ^ center, side0, side1, luminous flux [lumens]
   deriving Show
 
--- |Implementation of lights
+-- | Implementation of lights
 instance Shadow gen Light where
   shadowRay gen (OmniLight (pos, _)) point' =
       (RaySeg (Ray (point', dir), dist), gen)
-    where dir       = normalize3 vec2light
+    where dir       = vunitV3d vec2light
           dist      = norm vec2light
           vec2light = pos .-. point'
 
   shadowRay gen (RectLight (ptC, side0, side1, _)) point' =
       (RaySeg (Ray (point', dir), dist), gen'')
-    where dir          = normalize3 vec2light
+    where dir          = vunitV3d vec2light
           dist         = norm vec2light
           vec2light    = pt .-. point'
           pt           = ptC .+^ (vpt0 P.+ vpt1)
@@ -68,5 +70,5 @@ averageIntensity :: [LightIntensity] -> LightIntensity
 averageIntensity xs = (*invLength) <$> foldl (liftA2 (+)) zeroLightIntensity xs
   where invLength = _1 / (fromIntegral (length xs) *~ one)
 
-transfer :: Float -> Float -> Float -> LightTrans
+transfer :: Double -> Double -> Double -> LightTrans
 transfer r g b = V3 (r *~ one) (g *~ one) (b *~ one)

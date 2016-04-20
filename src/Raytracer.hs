@@ -23,7 +23,7 @@ import Control.Arrow (first)
 
 
 -- | gamma used for intensity mapping
-gamma, invGamma :: Float
+gamma, invGamma :: Double
 gamma    = 2.2
 invGamma = 1 / gamma
 
@@ -58,7 +58,7 @@ pathTrace gen scene@(Scene _ light envLight settings) =
         pathTrace' levelsLeft prevHit g0 raySeg = ((+) <$> lightIntensity <*> giIntensity, g''')
           where (RaySeg (Ray (_, shootDir), _)) = raySeg
                 geomHit        = traceRay scene prevHit raySeg
-                dir2viewer     = normalize3 (normalized shootDir ^* (-1))
+                dir2viewer     = vunitV3d (normalized shootDir ^* (-1))
 
                 isCameraRay    = maxDepth - levelsLeft == 0
                 giSamplesCount    = if isCameraRay then rsSecondaryGICount settings else 1

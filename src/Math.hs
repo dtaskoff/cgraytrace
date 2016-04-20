@@ -1,8 +1,9 @@
 module Math
   ( Ray(..)
   , RaySegment (..)
-  , Vec3, Coord3, coord
-  , UnitVec3, unitvec, normalize3, normalized, mkTangent
+  , V3d, P3d, p3d, vp3d
+  , UnitV3d, unitV3d, vunitV3d, unitV3map, liftUnitV3
+  , normalized, mkTangent
   , SphericalVec(..), toSpherical, fromSpherical
   , clamp, inRange
   , farthestDistance
@@ -17,77 +18,77 @@ import Linear.Affine
 import System.Random (RandomGen(..))
 
 
-farthestDistance :: Float
+farthestDistance :: Double
 farthestDistance = 1e+10
 
-type Vec3   = V3 Float
-type Coord3 = Point V3 Float
--- ^World coordinate system
+type V3d = V3 Double
+type P3d = Point V3 Double
+-- ^ World coordinate system
 
-coord :: a -> a -> a -> Point V3 a
-coord x y z = P $ V3 x y z
+p3d :: Double -> Double -> Double -> P3d
+p3d x y z = P $ V3 x y z
 
-newtype Ray = Ray (Coord3, UnitVec3)
+vp3d :: V3d -> P3d
+vp3d = P
+
+newtype Ray = Ray (P3d, UnitV3d)
   deriving Show
--- ^position & direction
+-- ^ position & direction
 
-newtype RaySegment = RaySeg (Ray, Float)
+newtype RaySegment = RaySeg (Ray, Double)
   deriving Show
--- ^ray segment over Ray and between [0..Float]
+-- ^ ray segment over Ray and between [0..Double]
 
 ---------------------------------------------------------------------
--- |Track normalized type-safe vectors in world-coordinate system
-newtype UnitV3 a = UnitV3 a
-  deriving (Eq, Show)
-type UnitVec3 = UnitV3 Vec3
+-- | Track normalized type-safe vectors in world-coordinate system
+newtype UnitV3d = UnitV3 V3d deriving (Eq, Show)
 
-instance Functor UnitV3 where
-  f `fmap` UnitV3 x = UnitV3 $ f x
+unitV3map :: (V3d -> V3d) -> UnitV3d -> UnitV3d
+f `unitV3map` UnitV3 x = UnitV3 . normalize $ f x
 
-instance Applicative UnitV3 where
-  pure = UnitV3
-  UnitV3 f <*> x = f <$> x
+liftUnitV3 :: (V3d -> V3d -> V3d) -> UnitV3d -> UnitV3d -> UnitV3d
+liftUnitV3 f (UnitV3 u) (UnitV3 v) = UnitV3 . normalize $ f u v
 
-normalize3 :: Vec3 -> UnitVec3
-normalize3 = pure . normalize
-
-normalized :: UnitVec3 -> Vec3
+normalized :: UnitV3d -> V3d
 normalized (UnitV3 v) = v
 
-unitvec :: Float -> Float -> Float -> UnitVec3
-unitvec x y z = normalize3 $ V3 x y z
+unitV3d :: Double -> Double -> Double -> UnitV3d
+unitV3d x y z = UnitV3 . normalize $ V3 x y z
+
+vunitV3d :: V3d -> UnitV3d
+vunitV3d = UnitV3 . normalize
 
 ---------------------------------------------------------------------
 clamp :: forall a. Ord a => a -> a -> a -> a
 clamp min' max' = min max' . max min'
 
--- |Convert random Word32 numbers to Float in the range [0,1]
-inRange :: RandomGen g => g -> Int -> Float
+-- | Convert random Word32 numbers to a Double in the range [0,1]
+inRange :: RandomGen g => g -> Int -> Double
 inRange gen i = on (P./) fromIntegral (i - min') (max' - min')
   where (min', max') = genRange gen
 
-mkTangent :: UnitVec3 -> UnitVec3
-mkTangent (UnitV3 (V3 x y z)) = normalize3 result
+mkTangent :: UnitV3d -> UnitV3d
+mkTangent (UnitV3 (V3 x y z)) = vunitV3d result
   where result | x' <= y' && x' <= z' = V3 0 z (-y)
                | y' <= z'             = V3 z 0 (-x)
                | otherwise            = V3 y (-x) 0
         (x', y', z') = (abs x, abs y, abs z)
 
 ---------------------------------------------------------------------
--- |length, theta (the elevation angle in the range [-pi/2, pi/2])
+-- | length, theta (the elevation angle in the range [-pi/2, pi/2])
 --  and phi (the azimuth angle in the range [0, 2*pi])
-data SphericalVec = SphereV !Float !(PlaneAngle Float) !(PlaneAngle Float)
+data SphericalVec = SphereV !Double !(PlaneAngle Double) !(PlaneAngle Double)
 
-toSpherical :: Vec3 -> SphericalVec
+toSpherical :: V3d -> SphericalVec
 toSpherical v@(V3 x y z) = SphereV r theta phi
   where r     = norm v
         theta = asin (z P./ r *~ one)
         phi   = if phi' < _0 then phi' + (_2*pi) else phi'
         phi'  = atan2 (y *~ one) (x *~ one)
 
--- |theta The elevation angle in the range [-pi/2, pi/2].
+-- | theta The elevation angle in the range [-pi/2, pi/2].
 --  phi The azimuth angle in the range [0, 2*pi].
-fromSpherical :: SphericalVec -> Vec3
+fromSpherical :: SphericalVec -> V3d
 fromSpherical (SphereV r theta phi) = r *^ V3 x y z
   where x = cos phi * thetaCos /~ one
         y = sin phi * thetaCos /~ one
