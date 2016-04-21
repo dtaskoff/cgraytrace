@@ -49,7 +49,7 @@ instance Camera OrthoCamera where
 
   cameraSensor = orthoSensor
 
--- |Implementation of Pinhole camera
+-- | Implementation of Pinhole camera
 instance Camera PinholeCamera where
   cameraRay (PinholeCamera sensor pos dir up focalLength) (US imagePos) =
       RaySeg (Ray (pos, vunitV3d proj), farthestDistance)
